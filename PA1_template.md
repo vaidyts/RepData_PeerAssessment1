@@ -1,18 +1,16 @@
----
-title: 'Reproducible Research Assignment 1 - Analysis of Walking Patterns'
-output: html_document
----
+Reproducible Research: Peer Assessment 1
+====================================
 
-The objective of this assignment is to analyze walking patterns measured in 5-minute intervals over a 61 day period. The given dataset has 61 * 288 observations. The project has 5 parts, and the following sections contain the questions and the answers.
+The objective of this assignment is to analyze walking patterns measured in 5-minute intervals over a 61 day period. The given dataset has 61 * 288 observations. The project has 5 parts, and the following sections contain the answers to the questions of each of the 5 parts.
 
 ##Part 1 - Loading and preprocessing the data###
 
-The dataset is loaded. The pre-processing involves converting the date, from a factor variable, to a date variable. Also, the interval is converted to time format.
+The dataset is loaded. The pre-processing involves converting the date, from a factor variable, to a date variable. Also, the interval is converted to time format by using the %% and %/% commands to get the hour and minute values. Using formatC, this is then obtained in 2 digit format and then pasted together using a colon, then the as.posixct command is invoked to get it in time format.
 
 ```r
 rawdata <- read.csv("activity.csv")
 rawdata$date <- as.Date(rawdata$date)
-# the interval is converted to time format by using the %% and %/% commands to get the hour and minute values. Using formatC, this is then obtained in 2 digit format and then pasted together using a colon, then the as.posixct command is invoked to get it in time fonat
+# the interval is converted to time format 
 rawdata$interval <- with( rawdata, paste0( formatC( (interval %/% 100),width=2,format="d",flag="0" ), ":", formatC( (interval %% 100),width=2,format="d",flag="0" ) ) )
 rawdata$interval <- as.POSIXct(rawdata$interval, format='%H:%M')
 ```
@@ -27,13 +25,13 @@ I found that there are 2 ways to do the calculation which lead to somewhat sligh
 # the three different commands below were found to be equivalent and produced the same result
 # essentially, the numberof steps is aggregated by date
 aggrbydate_na.def <- aggregate(x=list(steps=rawdata$steps),by=list(date=rawdata$date),FUN=sum)
-plot(aggrbydate_na.def$date,aggrbydate_na.def$steps,type="l",xlab="Date",ylab="Total number of steps",main="Option 1 - NA's present")
+plot(aggrbydate_na.def$date,aggrbydate_na.def$steps,type="l",xlab="Date",ylab="Total number of steps",main="Option 1 where na.rm=FALSE. NA's are present (see discontinuities)")
 ```
 
 ![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-31.png) 
 
 ```r
-hist(aggrbydate_na.def$steps)
+hist(aggrbydate_na.def$steps,main="Histogram for option 1, where na.rm=FALSE")
 ```
 
 ![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-32.png) 
@@ -52,13 +50,13 @@ summary(aggrbydate_na.def$steps)
 
 ```r
 aggrbydate_na.rm <- aggregate(x=list(steps=rawdata$steps),by=list(date=rawdata$date),FUN=sum, na.rm=TRUE)
-plot(aggrbydate_na.rm$date,aggrbydate_na.rm$steps,type="l",xlab="Date",ylab="Total number of steps",main="Option 2 - NA's set to zero")
+plot(aggrbydate_na.rm$date,aggrbydate_na.rm$steps,type="l",xlab="Date",ylab="Total number of steps",main="Option 2 where na.rm=TRUE, NA's set to zero")
 ```
 
 ![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-41.png) 
 
 ```r
-hist(aggrbydate_na.rm$steps)
+hist(aggrbydate_na.rm$steps,main="Histogram for Option 2, where na.rm=TRUE")
 ```
 
 ![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-42.png) 
@@ -122,7 +120,7 @@ for ( i in (1:nrow(rawdata))) {
   }
 }
 aggrbydate_imputebytime <- aggregate(x=list(steps=rawdata_imputebytime$steps), by=list(date=rawdata_imputebytime$date),FUN=sum)
-hist(aggrbydate_imputebytime$steps)
+hist(aggrbydate_imputebytime$steps,main="Histogram obtained after imputation")
 ```
 
 ![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7.png) 
@@ -145,9 +143,9 @@ if (weekdays(rawdata$date[i]) %in% c("Saturday","Sunday")) { rawdata$day[i] = "w
 else {rawdata$day[i] = "weekday"}
 }
 
-tmp <- aggregate(x=list(steps=rawdata$steps),by=list(day=rawdata$day,interval=rawdata$interval),FUN=sum,na.rm=TRUE)
-
-xyplot(steps~interval|day,data=tmp,layout=c(1,2),type="l",ylab="Number of steps")
+aggr_new <- aggregate(x=list(steps=rawdata$steps),by=list(day=rawdata$day,interval=rawdata$interval),FUN=sum,na.rm=TRUE)
+aggr_new$dftime <- difftime(aggr_new$interval, aggr_new$interval[1], units="hours")
+xyplot(steps~as.numeric(dftime)|day,data=aggr_new,layout=c(1,2),type="l",xlab="Interval in hrs",ylab="Number of steps")
 ```
 
 ![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8.png) 
